@@ -1,3 +1,18 @@
+This year we try in rust!
+first push is garbage code barely running, then a rewrite in more idiomatic code.
+Already fighting with the borrow checker on first day tho...
+
+reminder
+cargo download 2
+cargo solve 2
+
+
+
+
+
+
+
+
 <img src="./.assets/christmas_ferris.png" width="164">
 
 # 🎄 Advent of Code {year}
