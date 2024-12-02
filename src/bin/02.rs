@@ -8,24 +8,15 @@ pub fn part_one(input: &str) -> Option<u32> {
     // for each line, run a check function
     let mut sum:u32 = 0;
     for line in numbers {
-        let growing = line[0]<line[1];
-        let mut danger = false;
-        // check if the line is strictly growning or not
-        for i in 0..line.len()-1 {
-            let j = line[i];
-            let k = line[i+1];
+        let growing = line[0] < line[1];
+        let danger = line.windows(2).any(|pair| {
+            let (j, k) = (pair[0], pair[1]);
             if growing {
-                if j > k || k-j > 3 || j == k {
-                    danger = true;
-                    break;
-                }
+                j > k || k - j > 3 || j == k
             } else {
-                if j < k || j-k > 3 || j == k {
-                    danger = true;
-                    break;
-                }
+                j < k || j - k > 3 || j == k
             }
-        }
+        });
         if !danger {
             sum += 1;
         }
@@ -41,32 +32,19 @@ pub fn part_two(input: &str) -> Option<u32> {
     // for each line, run a check function
     let mut sum:u32 = 0;
     for line in numbers {
-        let mut safe = false;
-        for skip in 0..line.len() {
-            let mut line = line.clone();
-            line.remove(skip);
-            let growing = line[0]<line[1];
-            let mut danger = false;
-            // check if the line is strictly growning or not
-            for i in 0..line.len()-1 {
-                let j = line[i];
-                let k = line[i+1];
+        let safe = (0..line.len()).any(|skip| {
+            let mut line_clone = line.clone();
+            line_clone.remove(skip);
+            let growing = line_clone[0] < line_clone[1];
+            !line_clone.windows(2).any(|pair| {
+                let (j, k) = (pair[0], pair[1]);
                 if growing {
-                    if j > k || k-j > 3 || j == k {
-                        danger = true;
-                        break;
-                    }
+                    j > k || k - j > 3 || j == k
                 } else {
-                    if j < k || j-k > 3 || j == k {
-                        danger = true;
-                        break;
-                    }
+                    j < k || j - k > 3 || j == k
                 }
-            }
-            if !danger {
-                safe = true;
-            }
-        }
+            })
+        });
         if safe {
             sum += 1;
         }
