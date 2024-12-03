@@ -7,9 +7,21 @@ pub fn part_one(input: &str) -> Option<u32> {
 
     let Lines = input.lines();
     // iterate over lines, grab the first column of number
-    let column1 = Lines.clone().map(|line| line.split_whitespace().next().unwrap().parse::<u32>().unwrap());
+    let column1 = Lines.clone().map(|line| {
+        line.split_whitespace()
+            .next()
+            .unwrap()
+            .parse::<u32>()
+            .unwrap()
+    });
     // iterate over lines, grab the second column of numbers
-    let column2 = Lines.clone().map(|line| line.split_whitespace().nth(1).unwrap().parse::<u32>().unwrap());
+    let column2 = Lines.clone().map(|line| {
+        line.split_whitespace()
+            .nth(1)
+            .unwrap()
+            .parse::<u32>()
+            .unwrap()
+    });
     // sort the columns
     let mut column1 = column1.collect::<Vec<_>>();
     column1.sort();
@@ -17,8 +29,12 @@ pub fn part_one(input: &str) -> Option<u32> {
     column2.sort();
 
     // find the sum of the differences between the columns
-    let mut sum:u32 = 0;
-    sum = column1.iter().zip(column2.iter()).map(|(a, b)| (a.max(b) - a.min(b))).sum();
+    let mut sum: u32 = 0;
+    sum = column1
+        .iter()
+        .zip(column2.iter())
+        .map(|(a, b)| (a.max(b) - a.min(b)))
+        .sum();
     Some(sum)
 }
 

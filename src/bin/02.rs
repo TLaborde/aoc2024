@@ -4,9 +4,13 @@ pub fn part_one(input: &str) -> Option<u32> {
     // split input into array of lines
     let lines = input.lines();
     //iterate over lines, split by whitespace, get an array of number
-    let numbers = lines.map(|line| line.split_whitespace().map(|n| n.parse::<u32>().unwrap()).collect::<Vec<u32>>());
+    let numbers = lines.map(|line| {
+        line.split_whitespace()
+            .map(|n| n.parse::<u32>().unwrap())
+            .collect::<Vec<u32>>()
+    });
     // for each line, run a check function
-    let mut sum:u32 = 0;
+    let mut sum: u32 = 0;
     for line in numbers {
         let growing = line[0] < line[1];
         let danger = line.windows(2).any(|pair| {
@@ -28,9 +32,13 @@ pub fn part_two(input: &str) -> Option<u32> {
     // split input into array of lines
     let lines = input.lines();
     //iterate over lines, split by whitespace, get an array of number
-    let numbers = lines.map(|line| line.split_whitespace().map(|n| n.parse::<u32>().unwrap()).collect::<Vec<u32>>());
+    let numbers = lines.map(|line| {
+        line.split_whitespace()
+            .map(|n| n.parse::<u32>().unwrap())
+            .collect::<Vec<u32>>()
+    });
     // for each line, run a check function
-    let mut sum:u32 = 0;
+    let mut sum: u32 = 0;
     for line in numbers {
         let safe = (0..line.len()).any(|skip| {
             let mut line_clone = line.clone();
