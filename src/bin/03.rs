@@ -4,39 +4,38 @@ advent_of_code::solution!(3);
 pub fn part_one(input: &str) -> Option<u32> {
     // run a regular expression on the string and extract all matching groups
     let re = regex::Regex::new(r"mul\(([0-9]{1,3}),([0-9]{1,3})\)").unwrap();
-    let mut sum:u32 = 0;
-    for cap in re.captures_iter(input) {
-        let (min, max) = (
-            cap[1].parse::<u32>().unwrap(),
-            cap[2].parse::<u32>().unwrap()
-        );
-        sum += min * max;
-        }
+    let sum: u32 = re
+        .captures_iter(input)
+        .filter_map(|cap| {
+            let min = cap[1].parse::<u32>().ok()?;
+            let max = cap[2].parse::<u32>().ok()?;
+            Some(min * max)
+        })
+        .sum();
     Some(sum)
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
     let re = regex::Regex::new(r"(do\(\)|don't\(\)|mul\([0-9]{1,3},[0-9]{1,3}\))").unwrap();
     let re2 = regex::Regex::new(r"mul\(([0-9]{1,3}),([0-9]{1,3})\)").unwrap();
-    let mut sum:u32 = 0;
+    let mut sum: u32 = 0;
     let mut enabled_state = true;
+
     for cap in re.captures_iter(input) {
-        let act = &cap[0];
-        if act == "do()" {
-            enabled_state = true;
-        } else if act == "don't()" {
-            enabled_state = false;
-        } else {
-            if enabled_state {
-            let cap2 = re2.captures(act).unwrap();
-            let (min, max) = (
-                cap2[1].parse::<u32>().unwrap(),
-                cap2[2].parse::<u32>().unwrap()
-            );
-            sum += min * max;
+        match &cap[0] {
+            "do()" => enabled_state = true,
+            "don't()" => enabled_state = false,
+            act if enabled_state => {
+                if let Some(cap2) = re2.captures(act) {
+                    if let (Ok(min), Ok(max)) = (cap2[1].parse::<u32>(), cap2[2].parse::<u32>()) {
+                        sum += min * max;
+                    }
+                }
             }
+            _ => {}
+        }
     }
-}
+
     Some(sum)
 }
 
