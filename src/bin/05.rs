@@ -4,7 +4,8 @@ use std::cmp::Ordering;
 pub fn part_one(input: &str) -> Option<u32> {
     let (rules, manual_pages) = parse_input(input);
 
-    let valid = manual_pages.iter()
+    let valid = manual_pages
+        .iter()
         .filter(|manual| {
             let mut sorted = (*manual).clone();
             sorted.sort_by(|a, b| sort_manual_pages(a, b, &rules));
@@ -18,7 +19,8 @@ pub fn part_one(input: &str) -> Option<u32> {
 pub fn part_two(input: &str) -> Option<u32> {
     let (rules, manual_pages) = parse_input(input);
 
-    let valid = manual_pages.iter()
+    let valid = manual_pages
+        .iter()
         .map(|manual| {
             let mut sorted = (*manual).clone();
             sorted.sort_by(|a, b| sort_manual_pages(a, b, &rules));
@@ -34,17 +36,28 @@ pub fn part_two(input: &str) -> Option<u32> {
 
 fn parse_input(input: &str) -> (Vec<(u32, u32)>, Vec<Vec<u32>>) {
     let mut parts = input.split("\n\n");
-    let rules = parts.next().unwrap().lines().map(|line| {
-        let mut parts = line.split('|');
-        let page_before = parts.next().unwrap().parse::<u32>().unwrap();
-        let page_after = parts.next().unwrap().parse::<u32>().unwrap();
-        (page_before, page_after)
-    }).collect::<Vec<(u32, u32)>>();
+    let rules = parts
+        .next()
+        .unwrap()
+        .lines()
+        .map(|line| {
+            let mut parts = line.split('|');
+            let page_before = parts.next().unwrap().parse::<u32>().unwrap();
+            let page_after = parts.next().unwrap().parse::<u32>().unwrap();
+            (page_before, page_after)
+        })
+        .collect::<Vec<(u32, u32)>>();
 
     let manuals = parts.next().unwrap().lines().collect::<Vec<&str>>();
-    let manual_pages = manuals.iter().map(|manual| {
-        manual.split(',').map(|page| page.parse::<u32>().unwrap()).collect::<Vec<u32>>()
-    }).collect::<Vec<Vec<u32>>>();
+    let manual_pages = manuals
+        .iter()
+        .map(|manual| {
+            manual
+                .split(',')
+                .map(|page| page.parse::<u32>().unwrap())
+                .collect::<Vec<u32>>()
+        })
+        .collect::<Vec<Vec<u32>>>();
 
     (rules, manual_pages)
 }
