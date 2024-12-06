@@ -2,114 +2,94 @@ use std::{collections::HashSet, hash::Hash};
 
 advent_of_code::solution!(6);
 
-pub fn part_one(input: &str) -> Option<u32> {
-    //parse input as 2d array of chars
+fn parse_input(input: &str) -> (Vec<Vec<char>>, (usize, usize)) {
     let grid = input
         .lines()
         .map(|line| line.chars().collect::<Vec<char>>())
         .collect::<Vec<Vec<char>>>();
 
-    //find the coordinate of the starting point, which is somewhere in the grid
-    let mut position = grid
-        .iter()
-        .enumerate()
-        .find_map(|(y, row)| row.iter().position(|&c| c == '^').map(|x| (x, y)))
-        .unwrap();
-
-    println!("{} {}", position.0, position.1);
-    // first direction is up
-    let mut direction = (0, -1);
-    // until we reach the end of the grid, keep moving
-    // create a hashset to store the visited coordinates
-    let mut visited = std::collections::HashSet::new();
-    // add the starting point to the hashset
-    visited.insert(position);
-    loop {
-        let new_x = position.0 as i32 + direction.0;
-        let new_y = position.1 as i32 + direction.1;
-        if new_x < 0 || new_y < 0 || new_x > (grid[0].len() -1).try_into().unwrap() || new_y > (grid.len()-1).try_into().unwrap() {
-            println!("out od bounds {} {} {} {}", new_x, new_y, grid[0].len(), grid.len());
-            break;
-        }
-        // get the next character
-        let next = grid[new_y as usize][new_x as usize];
-
-        if next == '#' {
-            // rotate the direction 90 degrees clockwise
-            direction = (-direction.1, direction.0);
-        } else {
-            position.0 = new_x as usize;
-            position.1 = new_y as usize;
-            visited.insert(position);
-        }
-    }
-    Some(visited.len() as u32)
-}
-
-pub fn part_two(input: &str) -> Option<u32> {
-    //parse input as 2d array of chars
-    let grid = input
-        .lines()
-        .map(|line| line.chars().collect::<Vec<char>>())
-        .collect::<Vec<Vec<char>>>();
-
-    //find the coordinate of the starting point, which is somewhere in the grid
     let initial_position = grid
         .iter()
         .enumerate()
         .find_map(|(y, row)| row.iter().position(|&c| c == '^').map(|x| (x, y)))
         .unwrap();
-    let initial_direction = (0, -1);
-    let mut position = initial_position;
-    // first direction is up
-    let mut direction = initial_direction;
-    // until we reach the end of the grid, keep moving
-    // create a hashset to store the visited coordinates
-    let mut possible_obstactle = std::collections::HashSet::new();
+
+    (grid, initial_position)
+}
+
+pub fn part_one(input: &str) -> Option<u32> {
+    let (grid, mut position) = parse_input(input);
+    let mut direction = (0, -1);
+    let mut visited = HashSet::new();
+    visited.insert(position);
+
     loop {
         let new_x = position.0 as i32 + direction.0;
         let new_y = position.1 as i32 + direction.1;
-        if new_x < 0 || new_y < 0 || new_x > (grid[0].len() -1).try_into().unwrap() || new_y > (grid.len()-1).try_into().unwrap() {
+        if new_x < 0 || new_y < 0 || new_x >= grid[0].len() as i32 || new_y >= grid.len() as i32 {
             break;
         }
-        // get the next character
-        let next = grid[new_y as usize][new_x as usize];
 
+        let next = grid[new_y as usize][new_x as usize];
         if next == '#' {
-            // rotate the direction 90 degrees clockwise
             direction = (-direction.1, direction.0);
         } else {
-            position.0 = new_x as usize;
-            position.1 = new_y as usize;
-            possible_obstactle.insert(position);
+            position = (new_x as usize, new_y as usize);
+            visited.insert(position);
         }
     }
 
-    //for each possible obstacle, try to move around it
+    Some(visited.len() as u32)
+}
+
+pub fn part_two(input: &str) -> Option<u32> {
+    let (grid, initial_position) = parse_input(input);
+    let initial_direction = (0, -1);
+    let mut position = initial_position;
+    let mut direction = initial_direction;
+    let mut possible_obstacles = HashSet::new();
+
+    loop {
+        let new_x = position.0 as isize + direction.0;
+        let new_y = position.1 as isize + direction.1;
+        if new_x < 0 || new_y < 0 || new_x >= grid[0].len() as isize || new_y >= grid.len() as isize {
+            break;
+        }
+
+        let next = grid[new_y as usize][new_x as usize];
+        if next == '#' {
+            direction = (-direction.1, direction.0);
+        } else {
+            position = (new_x as usize, new_y as usize);
+            possible_obstacles.insert(position);
+        }
+    }
+
     let mut valid_obstacles = 0;
-    'obs_loop: for obstacle in possible_obstactle {
-        let mut visited: HashSet<(usize, usize, i32, i32)> = std::collections::HashSet::new();
+    'obs_loop: for &obstacle in &possible_obstacles {
+        let mut visited = HashSet::new();
         let mut position = initial_position;
         let mut direction = initial_direction;
-        visited.insert((position.0, position.1, direction.0, direction.1));
+        visited.insert((position, direction));
+
         loop {
-            let new_x = position.0 as i32 + direction.0;
-            let new_y = position.1 as i32 + direction.1;
-            if new_x < 0 || new_y < 0 || new_x > (grid[0].len() -1).try_into().unwrap() || new_y > (grid.len()-1).try_into().unwrap() {
-                continue 'obs_loop; // out of bound
+
+            let new_x = position.0 as isize + direction.0;
+            let new_y = position.1 as isize + direction.1;
+            if new_x < 0 || new_y < 0 || new_x >= grid[0].len() as isize || new_y >= grid.len() as isize {
+                continue 'obs_loop;
             }
+
             let next = grid[new_y as usize][new_x as usize];
-            if next == '#' || (new_x == obstacle.0 as i32 && new_y == obstacle.1 as i32){
+            if next == '#' || (new_x == obstacle.0 as isize && new_y == obstacle.1 as isize) {
                 direction = (-direction.1, direction.0);
             } else {
-                position.0 = new_x as usize;
-                position.1 = new_y as usize;
-                //if position and direction exists in the visited set, we have visited this position before
-                if visited.contains(&(position.0, position.1, direction.0, direction.1)) {
+                position = (new_x as usize, new_y as usize);
+                if visited.contains(&(position, direction)) {
                     valid_obstacles += 1;
                     continue 'obs_loop;
                 }
-                visited.insert((position.0, position.1, direction.0, direction.1));
+                visited.insert((position, direction));
             }
         }
     }
