@@ -52,7 +52,8 @@ pub fn part_two(input: &str) -> Option<u32> {
     loop {
         let new_x = position.0 as isize + direction.0;
         let new_y = position.1 as isize + direction.1;
-        if new_x < 0 || new_y < 0 || new_x >= grid[0].len() as isize || new_y >= grid.len() as isize {
+        if new_x < 0 || new_y < 0 || new_x >= grid[0].len() as isize || new_y >= grid.len() as isize
+        {
             break;
         }
 
@@ -73,10 +74,13 @@ pub fn part_two(input: &str) -> Option<u32> {
         visited.insert((position, direction));
 
         loop {
-
             let new_x = position.0 as isize + direction.0;
             let new_y = position.1 as isize + direction.1;
-            if new_x < 0 || new_y < 0 || new_x >= grid[0].len() as isize || new_y >= grid.len() as isize {
+            if new_x < 0
+                || new_y < 0
+                || new_x >= grid[0].len() as isize
+                || new_y >= grid.len() as isize
+            {
                 continue 'obs_loop;
             }
 
@@ -94,7 +98,6 @@ pub fn part_two(input: &str) -> Option<u32> {
         }
     }
     Some(valid_obstacles)
-
 }
 
 #[cfg(test)]
