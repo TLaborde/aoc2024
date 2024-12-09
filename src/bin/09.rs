@@ -1,30 +1,14 @@
-use core::num;
-
 advent_of_code::solution!(9);
 
 pub fn part_one(input: &str) -> Option<u64> {
-    // input is a single line, we go over each character and parse it as a digit
-    let numbers: Vec<u32> = input
-        .trim()
-        .chars()
-        .map(|c| c.to_digit(10).unwrap())
-        .collect();
-    // we save the alternating numbers into two vectors, one storage and one free space
-    let mut storage = Vec::new();
-    let mut free = Vec::new();
-    for i in 0..numbers.len() {
-        if i % 2 == 0 {
-            storage.push(numbers[i]);
-        } else {
-            free.push(numbers[i]);
-        }
-    }
+    let (mut storage, mut free) = parse_input(input);
     let mut new_storage = Vec::new();
     let mut index = 0;
     let mut last_index = storage.len() - 1;
-    while storage.len() > 0 {
+
+    while !storage.is_empty() {
         let current = storage.remove(0);
-        for i in 0..current {
+        for _ in 0..current.1 {
             new_storage.push(index);
         }
         index += 1;
@@ -32,105 +16,105 @@ pub fn part_one(input: &str) -> Option<u64> {
         let free_storage = free.remove(0);
         let mut filled_free_storage = 0;
         while filled_free_storage < free_storage {
-            if storage.len() == 0 {
+            if storage.is_empty() {
                 break;
             }
             let mut l = storage.pop().unwrap();
             new_storage.push(last_index);
             filled_free_storage += 1;
-            l -= 1;
-            if l > 0 {
-                storage.push(l as u32);
+            l.1 -= 1;
+            if l.1 > 0 {
+                storage.push(l);
             } else {
                 last_index -= 1;
             }
         }
     }
-    // in new storage, sum the product of the index and the value at that index
-    let mut sum: u64 = 0;
-    for i in 0..new_storage.len() {
-        sum += i as u64 * (new_storage[i] as u64);
-    }
+
+    let sum: u64 = new_storage
+        .iter()
+        .enumerate()
+        .map(|(i, &v)| i as u64 * v as u64)
+        .sum();
     Some(sum)
 }
 
 pub fn part_two(input: &str) -> Option<u64> {
-    // input is a single line, we go over each character and parse it as a digit
-    let numbers: Vec<u32> = input
-        .trim()
-        .chars()
-        .map(|c| c.to_digit(10).unwrap())
-        .collect();
-    // we save the alternating numbers into two vectors, one storage and one free space
-    let mut storage = Vec::new();
-    let mut free = Vec::new();
-    for i in 0..numbers.len() {
-        if i % 2 == 0 {
-            storage.push((i / 2, numbers[i]));
-        } else {
-            free.push(numbers[i]);
-        }
-    }
+    let (mut storage, mut free) = parse_input(input);
     let mut new_storage = Vec::new();
-    let mut index = 0;
     let mut last_index = storage.len() - 1;
-    let mut iteration_left = storage.len();
+    let mut iteration_left = storage.len() as u32;
+
     while last_index > 0 {
-        // read the value in last index
-        let mut last_value = storage[last_index];
+        let last_value = storage[last_index];
+        // check that we haven't already moved the value
+        // there might be a nicer way to do this
         if last_value.0 > iteration_left {
             last_index -= 1;
             continue;
         }
         iteration_left -= 1;
-        println!(
-            "trying to move {:?}, current last index is {}",
-            last_value, last_index
-        );
-        // find in free the index of the first value that is bigger or equal to the last value
+
+        // try to find some free space
+        // we only go as far as the last index, because we can only shift to the left
         let mut free_index = 0;
         while free_index < last_index && free[free_index] < last_value.1 {
             free_index += 1;
         }
+        // we didn't find a place to move it
         if free_index == last_index {
             last_index -= 1;
             continue;
         }
-        // update free storage
-        free[free_index] -= last_value.1;
-        // insert a zero free before the free_index
-        free.insert(free_index, 0);
-        // remove the last value from storage
-        storage.remove(last_index);
-        storage.insert(free_index + 1, (last_value.0, last_value.1));
 
-        // add the free space block
-        // get space before ahd after the last value
+        // we update the free space that we are filling
+        free[free_index] -= last_value.1;
+        // we add an empty free space to match where we insert the value in storage
+        free.insert(free_index, 0);
+        storage.insert(free_index + 1, last_value);
+        // we remove the value that we moved
+        storage.remove(last_index);
+
+        // we have now possibly 2 spaces around where the value was, and the space left by the value, so we combine them into one contiguous space
         let mut space_around = free.remove(last_index);
         if last_index < free.len() {
             space_around += free.remove(last_index);
         }
         free.insert(last_index, space_around + last_value.1);
     }
-    let mut s = storage.clone();
-    let mut f = free.clone();
-    new_storage.clear();
-    while s.len() > 0 {
-        let current = s.remove(0);
-        for i in 0..current.1 {
-            new_storage.push(current.0);
-        }
-        let current = f.remove(0);
-        for i in 0..current {
-            new_storage.push(0);
+
+    // generate the final storage for calculation
+    for (i, &(index, count)) in storage.iter().enumerate() {
+        new_storage.extend(vec![index; count as usize]);
+        if i < free.len() {
+            new_storage.extend(vec![0; free[i] as usize]);
         }
     }
-    println!("{:?}", new_storage);
-    let mut sum: u64 = 0;
-    for i in 0..new_storage.len() {
-        sum += i as u64 * (new_storage[i] as u64);
-    }
+
+    let sum: u64 = new_storage
+        .iter()
+        .enumerate()
+        .map(|(i, &v)| i as u64 * v as u64)
+        .sum();
     Some(sum)
+}
+
+fn parse_input(input: &str) -> (Vec<(u32, u32)>, Vec<u32>) {
+    let numbers: Vec<u32> = input
+        .trim()
+        .chars()
+        .map(|c| c.to_digit(10).unwrap())
+        .collect();
+    let mut storage = Vec::new();
+    let mut free = Vec::new();
+    for (i, &num) in numbers.iter().enumerate() {
+        if i % 2 == 0 {
+            storage.push(((i / 2) as u32, num));
+        } else {
+            free.push(num);
+        }
+    }
+    (storage, free)
 }
 
 #[cfg(test)]
