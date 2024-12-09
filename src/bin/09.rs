@@ -71,9 +71,9 @@ pub fn part_two(input: &str) -> Option<u64> {
         free[free_index] -= last_value.1;
         // we add an empty free space to match where we insert the value in storage
         free.insert(free_index, 0);
-        storage.insert(free_index + 1, last_value);
         // we remove the value that we moved
         storage.remove(last_index);
+        storage.insert(free_index + 1, last_value);
 
         // we have now possibly 2 spaces around where the value was, and the space left by the value, so we combine them into one contiguous space
         let mut space_around = free.remove(last_index);
