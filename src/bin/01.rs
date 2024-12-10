@@ -1,4 +1,3 @@
-
 advent_of_code::solution!(1);
 
 pub fn part_one(input: &str) -> Option<u32> {
@@ -58,7 +57,7 @@ pub fn part_two(input: &str) -> Option<u32> {
     // for each number in column, count the occurences in column 2
     let mut sum: u32 = 0;
     for (_, number) in column1.enumerate() {
-            sum += column2.clone().filter(|&n| n == number).count() as u32 * number;
+        sum += column2.clone().filter(|&n| n == number).count() as u32 * number;
     }
     Some(sum)
 }

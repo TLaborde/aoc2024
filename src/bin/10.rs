@@ -1,116 +1,68 @@
-use std::{collections::HashSet, path};
+use std::collections::HashSet;
 
 advent_of_code::solution!(10);
 
-pub fn part_one(input: &str) -> Option<u32> {
-    // parse input as 2d grid if single digit numbers
-    let grid: Vec<Vec<u32>> = input
+fn parse_input(input: &str) -> Vec<Vec<u32>> {
+    input
         .lines()
         .map(|line| line.chars().map(|c| c.to_digit(10).unwrap()).collect())
-        .collect();
-    // find all starting coordinates, where the value is 0
+        .collect()
+}
+
+fn generate_paths(grid: &[Vec<u32>], max_step: u32) -> Vec<Vec<(usize, usize)>> {
     let mut paths = Vec::new();
     for y in 0..grid.len() {
         for x in 0..grid[y].len() {
             if grid[y][x] == 0 {
-                let mut start = Vec::new();
-                start.push((x, y));
-                paths.push(start);
+                paths.push(vec![(x, y)]);
             }
         }
     }
-    // for 1 to 9..
-    for step in 1..10 {
-        let mut new_paths = Vec::new();
-        // for each starting coordinate
-        for steps in &mut paths {
-            // get the last coordinate
-            let (x, y) = steps[step - 1];
-                // check if the value is surrounded by step
-                 if y > 0 && grid[y - 1][x] == step as u32 {
-                    let mut new_steps = steps.clone();
-                    new_steps.push((x, y - 1));
-                    new_paths.push(new_steps);
-                }
-                if x > 0 && grid[y][x - 1] == step as u32{
-                    let mut new_steps = steps.clone();
-                    new_steps.push((x - 1, y));
-                    new_paths.push(new_steps);
-                }
-                if x < grid[y].len() - 1 && grid[y][x + 1] == step as u32 {
-                    let mut new_steps = steps.clone();
-                    new_steps.push((x + 1, y));
-                    new_paths.push(new_steps);
-                }
-                if y < grid.len() - 1 && grid[y + 1][x] == step as u32{
-                    let mut new_steps = steps.clone();
-                    new_steps.push((x, y + 1));
-                    new_paths.push(new_steps);
-                }
 
+    for step in 1..=max_step {
+        let mut new_paths = Vec::new();
+        for steps in &paths {
+            let (x, y) = steps[step as usize - 1];
+            if y > 0 && grid[y - 1][x] == step {
+                let mut new_steps = steps.clone();
+                new_steps.push((x, y - 1));
+                new_paths.push(new_steps);
+            }
+            if x > 0 && grid[y][x - 1] == step {
+                let mut new_steps = steps.clone();
+                new_steps.push((x - 1, y));
+                new_paths.push(new_steps);
+            }
+            if x < grid[y].len() - 1 && grid[y][x + 1] == step {
+                let mut new_steps = steps.clone();
+                new_steps.push((x + 1, y));
+                new_paths.push(new_steps);
+            }
+            if y < grid.len() - 1 && grid[y + 1][x] == step {
+                let mut new_steps = steps.clone();
+                new_steps.push((x, y + 1));
+                new_paths.push(new_steps);
+            }
         }
         paths = new_paths;
-
     }
 
-    // return the number of paths with unique first and last value
+    paths
+}
+
+pub fn part_one(input: &str) -> Option<u32> {
+    let grid = parse_input(input);
+    let paths = generate_paths(&grid, 9);
     let unique_paths: HashSet<_> = paths
         .iter()
         .map(|steps| (steps[0], steps[steps.len() - 1]))
         .collect();
-    let count = unique_paths.len() as u32;
-    Some(count)
+    Some(unique_paths.len() as u32)
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    let grid: Vec<Vec<u32>> = input
-        .lines()
-        .map(|line| line.chars().map(|c| c.to_digit(10).unwrap()).collect())
-        .collect();
-    // find all starting coordinates, where the value is 0
-    let mut paths = Vec::new();
-    for y in 0..grid.len() {
-        for x in 0..grid[y].len() {
-            if grid[y][x] == 0 {
-                let mut start = Vec::new();
-                start.push((x, y));
-                paths.push(start);
-            }
-        }
-    }
-    // for 1 to 9..
-    for step in 1..10 {
-        let mut new_paths = Vec::new();
-        // for each starting coordinate
-        for steps in &mut paths {
-            // get the last coordinate
-            let (x, y) = steps[step - 1];
-                // check if the value is surrounded by step
-                 if y > 0 && grid[y - 1][x] == step as u32 {
-                    let mut new_steps = steps.clone();
-                    new_steps.push((x, y - 1));
-                    new_paths.push(new_steps);
-                }
-                if x > 0 && grid[y][x - 1] == step as u32{
-                    let mut new_steps = steps.clone();
-                    new_steps.push((x - 1, y));
-                    new_paths.push(new_steps);
-                }
-                if x < grid[y].len() - 1 && grid[y][x + 1] == step as u32 {
-                    let mut new_steps = steps.clone();
-                    new_steps.push((x + 1, y));
-                    new_paths.push(new_steps);
-                }
-                if y < grid.len() - 1 && grid[y + 1][x] == step as u32{
-                    let mut new_steps = steps.clone();
-                    new_steps.push((x, y + 1));
-                    new_paths.push(new_steps);
-                }
-
-        }
-        paths = new_paths;
-
-    }
+    let grid = parse_input(input);
+    let paths = generate_paths(&grid, 9);
     Some(paths.len() as u32)
 }
 
