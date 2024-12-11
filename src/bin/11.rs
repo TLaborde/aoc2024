@@ -1,54 +1,52 @@
 advent_of_code::solution!(11);
 
 pub fn part_one(input: &str) -> Option<u64> {
-    //parse input, split on whitespace, cast as u64
-    let stones = input.split_whitespace()
-    .map(|n| n.parse::<u64>().unwrap())
-    .collect::<Vec<u64>>();
-// create an empty hastable to match stone to next step
-    let mut stone_map: std::collections::HashMap<(u64,u64), u64> = std::collections::HashMap::new();
-    let mut total = 0;
-    for stone in stones.iter() {
-        total += recur_stone_count(*stone, 25, &mut stone_map);
-    }
+    let stones: Vec<u64> = input.split_whitespace()
+        .filter_map(|n| n.parse().ok())
+        .collect();
+
+    let mut stone_map = std::collections::HashMap::new();
+    let total: u64 = stones.iter()
+        .map(|&stone| recur_stone_count(stone, 25, &mut stone_map))
+        .sum();
+
     Some(total)
 }
 
-fn recur_stone_count(stone: u64 ,blinks: u64, stone_map: & mut std::collections::HashMap<(u64,u64), u64>) -> u64 {
+fn recur_stone_count(stone: u64, blinks: u64, stone_map: &mut std::collections::HashMap<(u64, u64), u64>) -> u64 {
     if blinks == 0 {
         return 1;
     }
-    if stone_map.contains_key(&(stone, blinks)) {
-        return stone_map[&(stone, blinks)];
+    if let Some(&count) = stone_map.get(&(stone, blinks)) {
+        return count;
     }
-    let mut return_value = 1;
-    if stone == 0 {
-        return recur_stone_count(1, blinks -1, stone_map);
-    }
-    if ((stone as f64).log10().floor() as u64 + 1) % 2 == 0 {
+
+    let return_value = if stone == 0 {
+        recur_stone_count(1, blinks - 1, stone_map)
+    } else if (stone as f64).log10().floor() as u64 % 2 == 1 {
         let num_digits_to_split = ((stone as f64).log10().floor() as u64 + 1) / 2;
-        let left_part = stone / (10_usize.pow(num_digits_to_split as u32) as u64);
-        let right_part = stone % (10_usize.pow(num_digits_to_split as u32) as u64);
-        return_value = recur_stone_count(left_part, blinks -1 , stone_map) + recur_stone_count(right_part, blinks -1, stone_map);
+        let divisor = 10_u64.pow(num_digits_to_split as u32);
+        let left_part = stone / divisor;
+        let right_part = stone % divisor;
+        recur_stone_count(left_part, blinks - 1, stone_map) + recur_stone_count(right_part, blinks - 1, stone_map)
     } else {
-        return_value = recur_stone_count(stone*2024, blinks -1, stone_map);
-    }
+        recur_stone_count(stone * 2024, blinks - 1, stone_map)
+    };
+
     stone_map.insert((stone, blinks), return_value);
-    return return_value;
+    return_value
 }
 
-
 pub fn part_two(input: &str) -> Option<u64> {
-    //parse input, split on whitespace, cast as u64
-    let stones = input.split_whitespace()
-    .map(|n| n.parse::<u64>().unwrap())
-    .collect::<Vec<u64>>();
-// create an empty hastable to match stone to next step
-    let mut stone_map: std::collections::HashMap<(u64,u64), u64> = std::collections::HashMap::new();
-    let mut total = 0;
-    for stone in stones.iter() {
-        total += recur_stone_count(*stone, 75, &mut stone_map);
-    }
+    let stones: Vec<u64> = input.split_whitespace()
+        .filter_map(|n| n.parse().ok())
+        .collect();
+
+    let mut stone_map = std::collections::HashMap::new();
+    let total: u64 = stones.iter()
+        .map(|&stone| recur_stone_count(stone, 75, &mut stone_map))
+        .sum();
+
     Some(total)
 }
 
