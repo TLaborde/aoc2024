@@ -1,25 +1,21 @@
 advent_of_code::solution!(15);
 
 pub fn part_one(input: &str) -> Option<u32> {
-    // read input, make of 2d array of character for all lines except the last 2
-    // last line are the direction of the robot
-
     let lines: Vec<&str> = input.lines().collect();
-    let mut grid = lines
+    let mut grid: Vec<Vec<char>> = lines
         .iter()
         .take_while(|&&line| !line.is_empty())
-        .map(|&line| line.chars().collect::<Vec<_>>())
-        .collect::<Vec<_>>();
-    let directions = lines.last().unwrap().chars().collect::<Vec<_>>();
+        .map(|&line| line.chars().collect())
+        .collect();
+    let directions: Vec<char> = lines.last()?.chars().collect();
 
-    // find the starting point of the robot, it's the @ character
     let mut robot = grid
         .iter()
         .enumerate()
         .find_map(|(y, row)| row.iter().position(|&c| c == '@').map(|x| (x, y)))
         .unwrap();
 
-    for d in directions {
+    for &d in &directions {
         let direction = match d {
             '^' => (0, -1),
             'v' => (0, 1),
@@ -40,12 +36,11 @@ pub fn part_one(input: &str) -> Option<u32> {
                 next = (next.0 + direction.0, next.1 + direction.1);
                 continue;
             }
-            // we can move the robot
             if next_content == '.' {
                 if !boxes.is_empty() {
                     grid[next.1 as usize][next.0 as usize] = 'O';
                     grid[robot.1][robot.0] = '.';
-                    robot = (boxes[0].0 as usize as usize, boxes[0].1 as usize);
+                    robot = (boxes[0].0 as usize, boxes[0].1 as usize);
                     grid[robot.1][robot.0] = '@';
                 } else {
                     grid[robot.1][robot.0] = '.';
@@ -56,18 +51,14 @@ pub fn part_one(input: &str) -> Option<u32> {
             }
         }
     }
-    // print final grid
-    for row in &grid {
-        println!("{}", row.iter().collect::<String>());
-    }
 
-    let sum = grid
+    let sum: u32 = grid
         .iter()
         .enumerate()
         .flat_map(|(y, row)| {
             row.iter().enumerate().filter_map(move |(x, &c)| {
                 if c == 'O' {
-                    Some(((y as u32) * 100) + (x as u32))
+                    Some((y as u32) * 100 + (x as u32))
                 } else {
                     None
                 }
@@ -99,10 +90,6 @@ pub fn part_two(input: &str) -> Option<u32> {
         })
         .collect::<Vec<_>>();
 
-    for row in &grid {
-        println!("{}", row.iter().collect::<String>());
-    }
-
     let directions = lines.last().unwrap().chars().collect::<Vec<_>>();
 
     // find the starting point of the robot, it's the @ character
@@ -124,7 +111,7 @@ pub fn part_two(input: &str) -> Option<u32> {
             '<' => (-1, 0),
             _ => panic!("Invalid direction"),
         };
-        println!("Direction: {:?}", d);
+
         let mut box_moves: Vec<((i32, i32), (i32, i32))> = Vec::new();
         let mut nexts = Vec::new();
         nexts.push((robot.0 + direction.0, robot.1 + direction.1));
@@ -133,7 +120,7 @@ pub fn part_two(input: &str) -> Option<u32> {
                 .iter()
                 .map(|next| grid[next.1 as usize][next.0 as usize])
                 .collect();
-            println!("next content: {:?}", next_contents);
+
             if next_contents.contains(&'#') {
                 break;
             }
@@ -148,7 +135,7 @@ pub fn part_two(input: &str) -> Option<u32> {
                     if !box_moves.iter().any(|(_, to)| to == from) {
                         grid[from.1 as usize][from.0 as usize] = '.';
                     }
-                    println!("Moving box from {:?} to {:?}", from, to);
+
                 }
                 grid[robot.1 as usize][robot.0 as usize] = '.';
                 robot = (robot.0 as i32 + direction.0, robot.1 as i32 + direction.1);
