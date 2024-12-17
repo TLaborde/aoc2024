@@ -1,15 +1,13 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet, VecDeque};
 
 advent_of_code::solution!(16);
 
-pub fn part_one(input: &str) -> Option<u32> {
-    // parse input as a 2d vector of chars
-    let input = input
+fn parse_input(input: &str) -> (Vec<Vec<char>>, (i32, i32), (i32, i32)) {
+    let grid = input
         .lines()
         .map(|line| line.chars().collect::<Vec<char>>())
         .collect::<Vec<Vec<char>>>();
-    // find the start S and end E
-    let start = input
+    let start = grid
         .iter()
         .enumerate()
         .find_map(|(i, row)| {
@@ -18,7 +16,7 @@ pub fn part_one(input: &str) -> Option<u32> {
                 .map(|j| (i as i32, j as i32))
         })
         .unwrap();
-    let end = input
+    let end = grid
         .iter()
         .enumerate()
         .find_map(|(i, row)| {
@@ -27,98 +25,31 @@ pub fn part_one(input: &str) -> Option<u32> {
                 .map(|j| (i as i32, j as i32))
         })
         .unwrap();
-    // first direction is facing east
-    let direction = (0, 1);
-    // find the shortest path from S to E
-    let mut queue = std::collections::VecDeque::new();
-    queue.push_back(((start, direction), 0));
-    let mut visited = std::collections::HashSet::new();
-    visited.insert(start);
-    let mut total_steps = 0;
-    while let Some(((pos, direction), steps)) = queue.pop_front() {
-        if pos == end {
-            total_steps = steps;
-            break;
-        }
-        for (i, j) in [(0, 1), (1, 0), (0, -1), (-1, 0)].iter() {
-            let new_pos = (pos.0 as i32 + i, pos.1 as i32 + j);
-            if new_pos.0 < 0
-                || new_pos.0 >= input.len() as i32
-                || new_pos.1 < 0
-                || new_pos.1 >= input[0].len() as i32
-            {
-                continue;
-            }
-            if visited.contains(&new_pos) {
-                continue;
-            }
-            if input[new_pos.0 as usize][new_pos.1 as usize] == '#' {
-                continue;
-            }
-            let new_direction = (*i, *j);
-            if direction == new_direction {
-                queue.push_front(((new_pos, new_direction), steps + 1));
-            } else {
-                // add 1000 to step for each 90 degree turn
-                // compare new_direction with direction to know how much we turned
-                let new_steps = steps
-                    + 1
-                    + 1000 * (direction.0 * new_direction.1 - direction.1 * new_direction.0).abs();
-                queue.push_back(((new_pos, new_direction), new_steps));
-            }
-            visited.insert(new_pos);
-        }
-    }
-    Some(total_steps as u32)
+    (grid, start, end)
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
-    // parse input as a 2d vector of chars
-    let input = input
-        .lines()
-        .map(|line| line.chars().collect::<Vec<char>>())
-        .collect::<Vec<Vec<char>>>();
-    // find the start S and end E
-    let start = input
-        .iter()
-        .enumerate()
-        .find_map(|(i, row)| {
-            row.iter()
-                .position(|&c| c == 'S')
-                .map(|j| (i as i32, j as i32))
-        })
-        .unwrap();
-    let end = input
-        .iter()
-        .enumerate()
-        .find_map(|(i, row)| {
-            row.iter()
-                .position(|&c| c == 'E')
-                .map(|j| (i as i32, j as i32))
-        })
-        .unwrap();
-    // first direction is facing east
-    let direction = (0, 1);
-
+fn bfs(
+    grid: &[Vec<char>],
+    start: (i32, i32),
+    initial_direction: (i32, i32),
+) -> HashMap<((i32, i32), (i32, i32)), i32> {
     let mut dp = HashMap::new();
-    dp.insert((start, direction), 0);
-    let mut queue = std::collections::VecDeque::new();
+    dp.insert((start, initial_direction), 0);
+    let mut queue = VecDeque::new();
+    queue.push_back((start, initial_direction));
 
-    queue.push_back((start, direction));
     while let Some((pos, direction)) = queue.pop_front() {
-        for (i, j) in [(0, 1), (1, 0), (0, -1), (-1, 0)].iter() {
-            let new_pos = (pos.0 as i32 + i, pos.1 as i32 + j);
+        for &(i, j) in &[(0, 1), (1, 0), (0, -1), (-1, 0)] {
+            let new_pos = (pos.0 + i, pos.1 + j);
             if new_pos.0 < 0
-                || new_pos.0 >= input.len() as i32
+                || new_pos.0 >= grid.len() as i32
                 || new_pos.1 < 0
-                || new_pos.1 >= input[0].len() as i32
+                || new_pos.1 >= grid[0].len() as i32
+                || grid[new_pos.0 as usize][new_pos.1 as usize] == '#'
             {
                 continue;
             }
-            if input[new_pos.0 as usize][new_pos.1 as usize] == '#' {
-                continue;
-            }
-            let new_direction = (*i, *j);
+            let new_direction = (i, j);
             let new_steps = dp[&(pos, direction)]
                 + 1
                 + 1000 * (direction.0 * new_direction.1 - direction.1 * new_direction.0).abs();
@@ -129,70 +60,55 @@ pub fn part_two(input: &str) -> Option<u32> {
                 queue.push_back((new_pos, new_direction));
             }
             let new_steps = dp[&(pos, direction)]
-            + 1000 * (direction.0 * new_direction.1 - direction.1 * new_direction.0).abs();
-            if !dp.contains_key(&(pos, new_direction))
-                || new_steps < dp[&(pos, new_direction)] {
-                dp.insert((pos, new_direction), new_steps);
-                }
-        }
-    }
-
-    // do the same from the end
-    let mut dp2 = HashMap::new();
-    let mut queue = std::collections::VecDeque::new();
-    for (i, j) in [(0, 1), (1, 0), (0, -1), (-1, 0)].iter() {
-        dp2.insert((end, (*i, *j)), 0);
-        queue.push_back((end, (*i, *j)));
-    }
-
-    while let Some((pos, direction)) = queue.pop_front() {
-        for (i, j) in [(0, 1), (1, 0), (0, -1), (-1, 0)].iter() {
-            let new_pos = (pos.0 as i32 + i, pos.1 as i32 + j);
-            if new_pos.0 < 0
-                || new_pos.0 >= input.len() as i32
-                || new_pos.1 < 0
-                || new_pos.1 >= input[0].len() as i32
-            {
-                continue;
-            }
-            if input[new_pos.0 as usize][new_pos.1 as usize] == '#' {
-                continue;
-            }
-            let new_direction = (*i, *j);
-            let new_steps = dp2[&(pos, direction)]
-                + 1
                 + 1000 * (direction.0 * new_direction.1 - direction.1 * new_direction.0).abs();
-            if !dp2.contains_key(&(new_pos, new_direction))
-                || new_steps < dp2[&(new_pos, new_direction)]
+            if !dp.contains_key(&(pos, new_direction))
+                || new_steps < dp[&(pos, new_direction)]
             {
-                dp2.insert((new_pos, new_direction), new_steps);
-                queue.push_back((new_pos, new_direction));
+                dp.insert((pos, new_direction), new_steps);
             }
-            let new_steps = dp2[&(pos, direction)]
-            + 1000 * (direction.0 * new_direction.1 - direction.1 * new_direction.0).abs();
-            if !dp2.contains_key(&(pos, new_direction))
-                || new_steps < dp2[&(pos, new_direction)] {
-                dp2.insert((pos, new_direction), new_steps);
-                }
         }
     }
+    dp
+}
 
-    // count all the combinations of paths that are equal to the shortest path
-    let mut good_position = std::collections::HashSet::new();
-    // find smallest total steps for matching coordiante, set total steps to + infinity
+pub fn part_one(input: &str) -> Option<u32> {
+    let (grid, start, end) = parse_input(input);
+    let initial_direction = (0, 1);
+    let dp = bfs(&grid, start, initial_direction);
 
-    let mut total_steps = i32::MAX;
-    for (pos, steps) in &dp {
-        if let Some(&steps2) = dp2.get(&(pos.0, (-pos.1.0, -pos.1.1))) {
-            total_steps = total_steps.min(steps + steps2);
-        }
-    }
-    for (pos, steps) in dp {
-        if dp2.contains_key(&(pos.0, (-pos.1.0, -pos.1.1))) && steps + dp2[&(pos.0, (-pos.1.0, -pos.1.1))] == total_steps {
-            good_position.insert(pos.0);
-        }
-    }
-    Some(good_position.len() as u32)
+    dp.iter()
+        .filter(|&(&(pos, _), _)| pos == end)
+        .map(|(_, &steps)| steps)
+        .min()
+        .map(|steps| steps as u32)
+}
+
+pub fn part_two(input: &str) -> Option<u32> {
+    let (grid, start, end) = parse_input(input);
+    let initial_direction = (0, 1);
+
+    let dp_start = bfs(&grid, start, initial_direction);
+    let dp_end = bfs(&grid, end, initial_direction);
+
+    let total_steps = dp_start
+        .iter()
+        .filter_map(|(&(pos, direction), &steps)| {
+            dp_end.get(&(pos, (-direction.0, -direction.1)))
+                .map(|&steps2| steps + steps2)
+        })
+        .min()
+        .unwrap_or(i32::MAX);
+
+    let good_positions: HashSet<_> = dp_start
+        .iter()
+        .filter(|&(&(pos, direction), &steps)| {
+            dp_end.contains_key(&(pos, (-direction.0, -direction.1)))
+                && steps + dp_end[&(pos, (-direction.0, -direction.1))] == total_steps
+        })
+        .map(|(&(pos, _), _)| pos)
+        .collect();
+
+    Some(good_positions.len() as u32)
 }
 
 #[cfg(test)]
