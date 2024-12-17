@@ -128,6 +128,12 @@ pub fn part_two(input: &str) -> Option<u32> {
                 dp.insert((new_pos, new_direction), new_steps);
                 queue.push_back((new_pos, new_direction));
             }
+            let new_steps = dp[&(pos, direction)]
+            + 1000 * (direction.0 * new_direction.1 - direction.1 * new_direction.0).abs();
+            if !dp.contains_key(&(pos, new_direction))
+                || new_steps < dp[&(pos, new_direction)] {
+                dp.insert((pos, new_direction), new_steps);
+                }
         }
     }
 
@@ -135,7 +141,6 @@ pub fn part_two(input: &str) -> Option<u32> {
     let mut dp2 = HashMap::new();
     let mut queue = std::collections::VecDeque::new();
     for (i, j) in [(0, 1), (1, 0), (0, -1), (-1, 0)].iter() {
-        println!("{:?}", (end, (*i, *j)));
         dp2.insert((end, (*i, *j)), 0);
         queue.push_back((end, (*i, *j)));
     }
@@ -179,33 +184,15 @@ pub fn part_two(input: &str) -> Option<u32> {
     let mut total_steps = i32::MAX;
     for (pos, steps) in &dp {
         if let Some(&steps2) = dp2.get(&(pos.0, (-pos.1.0, -pos.1.1))) {
-            //println!("{} {} {}", steps + steps2, steps, steps2);
             total_steps = total_steps.min(steps + steps2);
-        } else {
-            println!("missing for {} {}", pos.0.0, pos.0.1);
         }
     }
-    // print total steps
-    println!("{:?}", total_steps);
     for (pos, steps) in dp {
         if dp2.contains_key(&(pos.0, (-pos.1.0, -pos.1.1))) && steps + dp2[&(pos.0, (-pos.1.0, -pos.1.1))] == total_steps {
             good_position.insert(pos.0);
         }
     }
-
-    // draw the grid, mark cells that are part of the shortest path
-    for (i, row) in input.iter().enumerate() {
-        for (j, c) in row.iter().enumerate() {
-            if good_position.contains(&(i as i32, j as i32)) {
-                print!("X");
-            } else {
-                print!("{}", c);
-            }
-        }
-        println!();
-    }
-
-    Some(good_position.len() as u32 + 1)
+    Some(good_position.len() as u32)
 }
 
 #[cfg(test)]
