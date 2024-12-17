@@ -34,9 +34,19 @@ fn bfs(
     initial_direction: (i32, i32),
 ) -> HashMap<((i32, i32), (i32, i32)), i32> {
     let mut dp = HashMap::new();
-    dp.insert((start, initial_direction), 0);
     let mut queue = VecDeque::new();
-    queue.push_back((start, initial_direction));
+    if initial_direction == (0,0) {
+        // add all directions
+       for (i, j) in &[(0, 1), (1, 0), (0, -1), (-1, 0)] {
+            let new_direction = (*i, *j);
+            dp.insert((start, new_direction), 0);
+            queue.push_back((start, new_direction));
+        }
+    } else {
+        dp.insert((start, initial_direction), 0);
+        queue.push_back((start, initial_direction));
+
+    }
 
     while let Some((pos, direction)) = queue.pop_front() {
         for &(i, j) in &[(0, 1), (1, 0), (0, -1), (-1, 0)] {
@@ -88,17 +98,14 @@ pub fn part_two(input: &str) -> Option<u32> {
     let initial_direction = (0, 1);
 
     let dp_start = bfs(&grid, start, initial_direction);
-    let dp_end = bfs(&grid, end, initial_direction);
+    let dp_end = bfs(&grid, end, (0,0));
 
-    let total_steps = dp_start
-        .iter()
-        .filter_map(|(&(pos, direction), &steps)| {
-            dp_end.get(&(pos, (-direction.0, -direction.1)))
-                .map(|&steps2| steps + steps2)
-        })
-        .min()
-        .unwrap_or(i32::MAX);
-
+    let mut total_steps = i32::MAX;
+    for (&(pos, direction), &steps) in &dp_start {
+        if let Some(&steps2) = dp_end.get(&(pos, (-direction.0, -direction.1))) {
+            total_steps = total_steps.min(steps + steps2);
+        }
+    }
     let good_positions: HashSet<_> = dp_start
         .iter()
         .filter(|&(&(pos, direction), &steps)| {
