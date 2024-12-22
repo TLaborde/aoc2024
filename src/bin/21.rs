@@ -1,128 +1,165 @@
-use std::collections::HashMap;
 
 advent_of_code::solution!(21);
 
-pub fn part_one(input: &str) -> Option<u32> {
-    // define a graph with a hashmap
+use std::collections::{HashMap, VecDeque};
+pub fn part_one(input: &str) -> Option<usize> {
+    let result = solve_gen(input, 2);
+    Some(result as usize)
+}
 
-            let mut num_keymap:std::collections::HashMap<char,Vec<(char,char)>> = std::collections::HashMap::new();
-            num_keymap.insert('A', vec![('0','<'), ('3','^')]);
-            num_keymap.insert('0', vec![('2','^'), ('A','>')]);
-            num_keymap.insert('1', vec![('4','^'), ('2','>')]);
-            num_keymap.insert('2', vec![('1','<'), ('0','v'), ('3','>'), ('5','^')]);
-            num_keymap.insert('3', vec![('2','<'), ('A','v'), ('6','^')]);
-            num_keymap.insert('4', vec![('1','v'), ('5','>'), ('7','^')]);
-            num_keymap.insert('5', vec![('2','v'), ('4','<'), ('6','>'), ('8','^')]);
-            num_keymap.insert('6', vec![('3','v'), ('5','<'), ('9','^')]);
-            num_keymap.insert('7', vec![('4','v'), ('8','>')]);
-            num_keymap.insert('8', vec![('5','v'), ('7','<'), ('9','>')]);
-            num_keymap.insert('9', vec![('6','v'), ('8','<')]);
+pub const DIRS: [(i32, i32); 4] = [(1, 0), (0, 1), (-1, 0), (0, -1)];
 
+pub fn solve_gen(input: &str, levels: usize) -> usize {
+    let numpad = vec![
+        [b'7', b'8', b'9'],
+        [b'4', b'5', b'6'],
+        [b'1', b'2', b'3'],
+        [b' ', b'0', b'A'],
+    ];
 
-            let mut dir_keymap:std::collections::HashMap<char,Vec<(char,char)>> = std::collections::HashMap::new();
-            dir_keymap.insert('A', vec![('^', '<'), ('>', 'v')]);
-            dir_keymap.insert('^', vec![('A', '>'), ('v', 'v')]);
-            dir_keymap.insert('>', vec![('A', '^'), ('v', '<')]);
-            dir_keymap.insert('v', vec![('<', '<'), ('^', '^'), ('>', '>')]);
-            dir_keymap.insert('<', vec![('v', '>')]);
+    let dirpad = vec![[b' ', b'^', b'A'], [b'<', b'v', b'>']];
 
-    //let memory = std::collections::HashMap::new();
+    let lines = input.lines().collect::<Vec<_>>();
+    let mut cache = HashMap::new();
+
+    let max_depth = levels;
+
     let mut total = 0;
-    for line in input.lines() {
-        let mut start = 'A';
-    let mut sum = 0;
-    for next in line.chars() {
-        let presses = get_cheapest(&num_keymap ,&dir_keymap,start, next, 3);
-        sum += presses;
-        start = next;
+    for l in &lines {
+        let mut cursors = vec![b'A'; max_depth + 1];
+        let len = find_shortest_sequence(
+            l.as_bytes(),
+            max_depth,
+            true,
+            &mut cursors,
+            &numpad,
+            &dirpad,
+            &mut cache,
+        );
+
+        let n = l[0..3].parse::<usize>().unwrap();
+        total += n * len;
     }
-    // remove final char from line and parse to int
-    let entry = line[..line.len()-1].parse::<u32>().unwrap();
-    println!("entry: {}, sum: {}", entry, sum);
-    total += sum*entry;
-    }
-    Some(total)
+    total
+}
+pub fn part_two(input: &str) -> Option<usize> {
+    let result = solve_gen(input, 25);
+    Some(result as usize)
 }
 
-fn get_best_dirpad (num_keymap:&std::collections::HashMap<char,Vec<(char,char)>> ,dir_keymap:&std::collections::HashMap<char,Vec<(char,char)>>, start: char, end: char, level: u32) -> u32 {
-    let mut visited = std::collections::HashSet::new();
-    let mut queue = std::collections::VecDeque::new();
-    queue.push_back((start, String::new()));
-    let mut min_presses = u32::MAX;
-    while !queue.is_empty() {
-        let (current, sequence) = queue.pop_front().unwrap();
-        if current == end {
-            // add A to sequence string
-            let mut full_sequence = sequence.clone();
-            full_sequence.push('A');
-            let presses = get_best_robot(num_keymap, dir_keymap, full_sequence, level-1);
-            if presses < min_presses {
-                min_presses = presses;
+
+fn find_shortest_paths(keypad: &[[u8; 3]], from: u8, to: u8) -> Vec<Vec<u8>> {
+    // find 'from' and 'to' on keypad
+    let mut start = (0, 0);
+    let mut end = (0, 0);
+    for (y, row) in keypad.iter().enumerate() {
+        for (x, &c) in row.iter().enumerate() {
+            if c == from {
+                start = (x, y);
             }
-            continue;
-        }
-        if visited.contains(&current) {
-            continue;
-        }
-        visited.insert(current);
-        for (neighbor, seq) in dir_keymap.get(&current).unwrap() {
-            // add neightbor.1 to sequence string
-            let mut new_sequence = sequence.clone();
-            new_sequence.push(*seq);
-            queue.push_back((*neighbor, new_sequence));
-        }
-    }
-   min_presses
-}
-
-
-
-fn get_cheapest(num_keymap:&std::collections::HashMap<char,Vec<(char,char)>> ,dir_keymap:&std::collections::HashMap<char,Vec<(char,char)>>, start: char, end: char, level: u32) -> u32 {
-    let mut visited = std::collections::HashSet::new();
-    let mut queue = std::collections::VecDeque::new();
-    queue.push_back((start, String::new()));
-    let mut min_presses = u32::MAX;
-    while !queue.is_empty() {
-        let (current, sequence) = queue.pop_front().unwrap();
-        if current == end {
-            // add A to sequence string
-            let mut full_sequence = sequence.clone();
-            full_sequence.push('A');
-            let presses = get_best_robot(num_keymap, dir_keymap, full_sequence, level);
-            if presses < min_presses {
-                min_presses = presses;
+            if c == to {
+                end = (x, y);
             }
+        }
+    }
+
+    if start == end {
+        return vec![vec![b'A']];
+    }
+
+    // flood fill keypad to find the shortest distances
+    let mut dists = vec![[usize::MAX; 3]; keypad.len()];
+    let mut queue = VecDeque::new();
+    queue.push_back((start.0, start.1, 0));
+
+    while let Some((x, y, steps)) = queue.pop_front() {
+        dists[y][x] = steps;
+        for (dx, dy) in DIRS {
+            let nx = x as i32 + dx;
+            let ny = y as i32 + dy;
+            if nx >= 0
+                && ny >= 0
+                && nx < 3
+                && ny < keypad.len() as i32
+                && keypad[ny as usize][nx as usize] != b' '
+                && dists[ny as usize][nx as usize] == usize::MAX
+            {
+                queue.push_back((nx as usize, ny as usize, steps + 1));
+            }
+        }
+    }
+
+    // backtrack from 'end' back to 'start' and collect all paths
+    let mut paths = Vec::new();
+    let mut stack = Vec::new();
+    stack.push((end.0, end.1, vec![b'A']));
+    while let Some((x, y, path)) = stack.pop() {
+        if x == start.0 && y == start.1 {
+            paths.push(path);
             continue;
         }
-        if visited.contains(&current) {
-            continue;
-        }
-        visited.insert(current);
-        for (neighbor, seq) in num_keymap.get(&current).unwrap() {
-            let mut new_sequence = sequence.clone();
-            new_sequence.push(*seq);
-            queue.push_back((*neighbor, new_sequence));
+        for (i, (dx, dy)) in DIRS.iter().enumerate() {
+            let nx = x as i32 + dx;
+            let ny = y as i32 + dy;
+            if nx >= 0
+                && ny >= 0
+                && nx < 3
+                && ny < keypad.len() as i32
+                && dists[ny as usize][nx as usize] < dists[y][x]
+            {
+                // do everything in reverse
+                let c = match i {
+                    0 => b'<',
+                    1 => b'^',
+                    2 => b'>',
+                    3 => b'v',
+                    _ => panic!(),
+                };
+                let mut new_path = vec![c];
+                new_path.extend(&path);
+                stack.push((nx as usize, ny as usize, new_path));
+            }
         }
     }
-    min_presses
+
+    paths
 }
 
+fn find_shortest_sequence(
+    s: &[u8],
+    depth: usize,
+    highest: bool,
+    cursors: &mut Vec<u8>,
+    numpad: &[[u8; 3]],
+    dirpad: &[[u8; 3]],
+    cache: &mut HashMap<(Vec<u8>, usize, u8), usize>,
+) -> usize {
+    let cache_key = (s.to_vec(), depth, cursors[depth]);
+    if let Some(cached) = cache.get(&cache_key) {
+        return *cached;
+    }
 
-fn get_best_robot(num_keymap:&std::collections::HashMap<char,Vec<(char,char)>> ,dir_keymap:&std::collections::HashMap<char,Vec<(char,char)>>,sequence: String, level: u32) -> u32 {
-    if level == 1 {
-        return sequence.len() as u32;
+    let mut result = 0;
+    for &c in s {
+        let paths =
+            find_shortest_paths(if highest { numpad } else { dirpad }, cursors[depth], c);
+        if depth == 0 {
+            result += paths.into_iter().map(|l| l.len()).min().unwrap();
+        } else {
+            result += paths
+                .into_iter()
+                .map(|p| {
+                    find_shortest_sequence(&p, depth - 1, false, cursors, numpad, dirpad, cache)
+                })
+                .min()
+                .unwrap();
+        }
+        cursors[depth] = c;
     }
-    let mut start = 'A';
-    let mut sum = 0;
-    for next in sequence.chars() {
-        let presses = get_best_dirpad(num_keymap ,dir_keymap,start, next, level);
-        sum += presses;
-        start = next;
-    }
-    sum
-}
-pub fn part_two(input: &str) -> Option<u32> {
-    None
+
+    cache.insert(cache_key, result);
+
+    result
 }
 
 #[cfg(test)]
